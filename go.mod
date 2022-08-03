@@ -3,9 +3,12 @@ module github.com/onosproject/onos-p4-sdk
 go 1.17
 
 require (
+	github.com/atomix/atomix-go-client v0.6.2
+	github.com/gogo/protobuf v1.3.2
 	github.com/google/uuid v1.3.0
 	github.com/onosproject/onos-api/go v0.9.31
 	github.com/onosproject/onos-lib-go v0.8.17
+	github.com/onosproject/onos-topo v0.9.7
 	github.com/p4lang/p4runtime v1.4.0-rc.5
 	github.com/stretchr/testify v1.8.0
 	google.golang.org/genproto v0.0.0-20220803205849-8f55acc8769f
@@ -14,19 +17,23 @@ require (
 
 require (
 	github.com/Shopify/sarama v1.31.1 // indirect
-	github.com/atomix/atomix-go-framework v0.10.0 // indirect
+	github.com/atomix/atomix-api/go v0.4.9 // indirect
+	github.com/atomix/atomix-go-framework v0.10.1 // indirect
+	github.com/atomix/atomix-go-local v0.8.0 // indirect
+	github.com/bits-and-blooms/bitset v1.2.0 // indirect
+	github.com/bits-and-blooms/bloom/v3 v3.0.1 // indirect
+	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/eapache/go-resiliency v1.2.0 // indirect
 	github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21 // indirect
 	github.com/eapache/queue v1.1.0 // indirect
 	github.com/ericchiang/oidc v0.0.0-20160908143337-11f62933e071 // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
-	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/golang/mock v1.6.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
-	github.com/grpc-ecosystem/go-grpc-middleware v1.0.0 // indirect
+	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0 // indirect
 	github.com/hashicorp/go-uuid v1.0.2 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/jcmturner/aescts/v2 v2.0.0 // indirect
