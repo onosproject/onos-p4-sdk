@@ -3,26 +3,20 @@
 # SPDX-License-Identifier: Apache-2.0
 name: release-on-tag
 
-
 on:
   push:
     branches:
       - master
-
 jobs:
-  release-on-push:
+  build:
     runs-on: ubuntu-latest
-    env:
-      GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
     steps:
-      - id: release
-        uses: rymndhng/release-on-push-action@v0.25.0
+      - uses: actions/checkout@v2
         with:
-          bump_version_scheme: norelease
-          tag_prefix: v
-          use_github_release_notes: true
-
-      - name: Check Output Parameters
-        run: |
-          echo "Got tag name ${{ steps.release.outputs.tag_name }}"
-          echo "Got release version ${{ steps.release.outputs.version }}"
+          fetch-depth: '0'
+      - name: Bump version and push tag
+        uses: anothrNick/github-tag-action@1.36.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WITH_V: true
+          DEFAULT_BUMP: none
