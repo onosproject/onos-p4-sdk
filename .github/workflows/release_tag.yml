@@ -16,7 +16,7 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
     steps:
       - id: release
-        uses: rymndhng/release-on-push-action@master
+        uses: rymndhng/release-on-push-action@v0.25.0
         with:
           bump_version_scheme: norelease
           tag_prefix: v
