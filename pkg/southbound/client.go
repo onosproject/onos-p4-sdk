@@ -31,6 +31,10 @@ type client struct {
 	streamClient         *streamClient
 }
 
+func (c *client) StreamChannel() p4api.P4Runtime_StreamChannelClient {
+	return c.streamClient.StreamChannel()
+}
+
 func (c *client) RecvArbitrationResponse() (*p4api.StreamMessageResponse_Arbitration, error) {
 	response, err := c.streamClient.RecvArbitrationResponse()
 	return response, errors.FromGRPC(err)

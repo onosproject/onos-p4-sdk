@@ -13,11 +13,17 @@ import (
 type StreamClient interface {
 	SendArbitrationRequest(deviceID uint64, electionID uint64, role string) error
 	RecvArbitrationResponse() (*p4api.StreamMessageResponse_Arbitration, error)
+	StreamChannel() p4api.P4Runtime_StreamChannelClient
 }
 
 type streamClient struct {
 	p4runtimeClient p4api.P4RuntimeClient
 	streamChannel   p4api.P4Runtime_StreamChannelClient
+}
+
+// StreamChannel returns a stream channel client
+func (s *streamClient) StreamChannel() p4api.P4Runtime_StreamChannelClient {
+	return s.streamChannel
 }
 
 func (s *streamClient) RecvArbitrationResponse() (*p4api.StreamMessageResponse_Arbitration, error) {
