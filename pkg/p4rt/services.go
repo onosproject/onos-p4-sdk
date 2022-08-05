@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package app
+package p4rt
 
 import (
 	"context"
@@ -30,16 +30,16 @@ type Config struct {
 	TopoAddress string
 }
 
-// P4RTController p4rt controller
-type P4RTController struct {
+// Controller p4rt controller
+type Controller struct {
 	Config    Config
 	conns     southbound.ConnManager
 	topoStore topo.Store
 }
 
-// StartP4RTController creates a new P4RTController instance and starts it
-func StartP4RTController(cfg Config) *P4RTController {
-	p4rtController := &P4RTController{
+// StartController creates a new P4RTController instance and starts it
+func StartController(cfg Config) *Controller {
+	p4rtController := &Controller{
 		Config: cfg,
 	}
 	p4rtController.run()
@@ -47,7 +47,7 @@ func StartP4RTController(cfg Config) *P4RTController {
 }
 
 // run runs p4rt controller
-func (c *P4RTController) run() {
+func (c *Controller) run() {
 	log.Infow("Starting P4RT Controller ")
 	if err := c.start(); err != nil {
 		log.Fatalw("Unable to run P4Rt controller", "error", err)
@@ -55,7 +55,7 @@ func (c *P4RTController) run() {
 }
 
 // Client returns a master client for the given target
-func (c *P4RTController) Client(ctx context.Context, targetID topoapi.ID) (P4TargetClient, error) {
+func (c *Controller) Client(ctx context.Context, targetID topoapi.ID) (TargetClient, error) {
 	targetEntity, err := c.topoStore.Get(ctx, targetID)
 	if err != nil {
 		return nil, err
@@ -100,7 +100,7 @@ func (c *P4RTController) Client(ctx context.Context, targetID topoapi.ID) (P4Tar
 		return nil, errors.NewNotFound("connection not found for target", targetID)
 	}
 
-	return &p4TargetClient{
+	return &targetClient{
 		targetID: targetID,
 		conn:     conn,
 		deviceID: p4rtServerInfo.DeviceID,
@@ -112,7 +112,7 @@ func (c *P4RTController) Client(ctx context.Context, targetID topoapi.ID) (P4Tar
 	}, nil
 }
 
-func (c *P4RTController) start() error {
+func (c *Controller) start() error {
 	opts, err := certs.HandleCertPaths(c.Config.CAPath, c.Config.KeyPath, c.Config.CertPath, true)
 	if err != nil {
 		return err
@@ -154,25 +154,25 @@ func (c *P4RTController) start() error {
 }
 
 // startNodeController starts node controller
-func (c *P4RTController) startNodeController(topo topo.Store) error {
+func (c *Controller) startNodeController(topo topo.Store) error {
 	nodeController := node.NewController(topo)
 	return nodeController.Start()
 }
 
 // startConnController starts connection controller
-func (c *P4RTController) startConnController(topo topo.Store, conns southbound.ConnManager) error {
+func (c *Controller) startConnController(topo topo.Store, conns southbound.ConnManager) error {
 	connController := connection.NewController(topo, conns)
 	return connController.Start()
 }
 
 // startTargetController starts target controller
-func (c *P4RTController) startTargetController(topo topo.Store, conns southbound.ConnManager) error {
+func (c *Controller) startTargetController(topo topo.Store, conns southbound.ConnManager) error {
 	targetController := target.NewController(topo, conns)
 	return targetController.Start()
 }
 
 // startMastershipController starts mastership controller
-func (c *P4RTController) startMastershipController(topo topo.Store, conns southbound.ConnManager) error {
+func (c *Controller) startMastershipController(topo topo.Store, conns southbound.ConnManager) error {
 	mastershipController := mastership.NewController(topo, conns)
 	return mastershipController.Start()
 }

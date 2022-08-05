@@ -23,7 +23,6 @@ type writeClient struct {
 // Write :
 func (w *writeClient) Write(ctx context.Context, request *p4api.WriteRequest, opts ...grpc.CallOption) (*p4api.WriteResponse, error) {
 	response, err := w.p4runtimeClient.Write(ctx, request, opts...)
-	log.Warnf("Test error %+v", err)
 	return response, errors.FromGRPC(err)
 }
 
