@@ -18,9 +18,10 @@ type TargetClient interface {
 	Capabilities(ctx context.Context, opts ...grpc.CallOption) (*p4api.CapabilitiesResponse, error)
 	Read(ctx context.Context, entities []*p4api.Entity, opts ...grpc.CallOption) ([]*p4api.Entity, error)
 	Write(ctx context.Context, updates []*p4api.Update, atomicity p4api.WriteRequest_Atomicity, opts ...grpc.CallOption) (*p4api.WriteResponse, error)
-	StreamChannel() p4api.P4Runtime_StreamChannelClient
 	SetForwardingPipelineConfig(ctx context.Context, spec *PipelineConfigSpec, opts ...grpc.CallOption) (*p4api.SetForwardingPipelineConfigResponse, error)
 	GetForwardingPipelineConfig(ctx context.Context, responseType p4api.GetForwardingPipelineConfigRequest_ResponseType, opts ...grpc.CallOption) (*p4api.GetForwardingPipelineConfigResponse, error)
+	PacketIn(outputCh chan *p4api.PacketIn) error
+	PacketOut(packetOut *p4api.PacketOut) error
 }
 
 type targetClient struct {
@@ -29,6 +30,16 @@ type targetClient struct {
 	deviceID   uint64
 	role       string
 	electionID *p4api.Uint128
+}
+
+func (p *targetClient) PacketIn(outputCh chan *p4api.PacketIn) error {
+	log.Debugw("Receiving packet in")
+	return p.conn.PacketIn(outputCh)
+}
+
+func (p *targetClient) PacketOut(packetOut *p4api.PacketOut) error {
+	log.Debugw("Sending packet out", "packet out", packetOut)
+	return p.conn.PacketOut(packetOut)
 }
 
 // SetForwardingPipelineConfig sets forwarding pipeline config
@@ -44,6 +55,7 @@ func (p *targetClient) SetForwardingPipelineConfig(ctx context.Context, spec *Pi
 		Action:     spec.Action,
 	}
 
+	log.Debugw("Setting forwarding pipeline device config", "request", request, "pipeline config spec", spec)
 	return p.conn.SetForwardingPipelineConfig(ctx, request, opts...)
 }
 
@@ -54,12 +66,8 @@ func (p *targetClient) GetForwardingPipelineConfig(ctx context.Context, response
 		ResponseType: responseType,
 	}
 
+	log.Debugw("Getting forwarding pipeline device config", "responseType", responseType)
 	return p.conn.GetForwardingPipelineConfig(ctx, request, opts...)
-}
-
-// StreamChannel returns a stream channel client
-func (p *targetClient) StreamChannel() p4api.P4Runtime_StreamChannelClient {
-	return p.conn.StreamChannel()
 }
 
 // Write  Update one or more P4 entities on the target.
@@ -82,6 +90,7 @@ func (p *targetClient) Read(ctx context.Context, entities []*p4api.Entity, opts 
 		DeviceId: p.deviceID,
 		Entities: entities,
 	}
+	log.Debugw("Reading entities", "entities", entities)
 	return p.conn.ReadEntities(ctx, request, opts...)
 }
 

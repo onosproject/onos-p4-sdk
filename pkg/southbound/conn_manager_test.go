@@ -6,6 +6,7 @@ package southbound
 
 import (
 	"context"
+	"encoding/binary"
 	topoapi "github.com/onosproject/onos-api/go/onos/topo"
 	"github.com/onosproject/onos-lib-go/pkg/northbound"
 	p4api "github.com/p4lang/p4runtime/go/p4/v1"
@@ -20,12 +21,13 @@ import (
 )
 
 const (
-	targetPort = 9559
-	targetHost = "localhost"
-	targetID1  = "packet-switch-1"
-	targetID2  = "packet-switch-2"
-	deviceID1  = 1
-	deviceID2  = 2
+	targetPort  = 9559
+	targetHost  = "localhost"
+	targetID1   = "packet-switch-1"
+	targetID2   = "packet-switch-2"
+	deviceID1   = 1
+	deviceID2   = 2
+	numPacketIn = 10
 )
 
 func newTestServer() *testServer {
@@ -78,6 +80,25 @@ func (s testServer) GetForwardingPipelineConfig(ctx context.Context, request *p4
 	return response, nil
 }
 
+func (s testServer) sendPacketIn(payload []byte, server p4api.P4Runtime_StreamChannelServer) error {
+
+	response := &p4api.StreamMessageResponse{
+		Update: &p4api.StreamMessageResponse_Packet{
+			Packet: &p4api.PacketIn{
+				Payload: payload,
+			},
+		},
+	}
+	log.Info("Sending packet In", response)
+	err := server.Send(response)
+	if err != nil {
+		log.Warn(err)
+	}
+
+	return nil
+
+}
+
 func (s testServer) StreamChannel(server p4api.P4Runtime_StreamChannelServer) error {
 	ctx := server.Context()
 
@@ -117,10 +138,17 @@ func (s testServer) StreamChannel(server p4api.P4Runtime_StreamChannelServer) er
 			if err := server.Send(&resp); err != nil {
 				log.Warn(err)
 			}
+		case *p4api.StreamMessageRequest_Packet:
+			packetOutPayload := v.Packet.Payload
+			err = s.sendPacketIn(packetOutPayload, server)
+			if err != nil {
+				log.Warn(err)
+			}
 
 		}
 
 	}
+
 }
 
 func (s testServer) Capabilities(ctx context.Context, request *p4api.CapabilitiesRequest) (*p4api.CapabilitiesResponse, error) {
@@ -222,6 +250,49 @@ func createTestTarget(t *testing.T, targetID string, deviceID uint64, insecure b
 	assert.NoError(t, err)
 
 	return target
+}
+
+func TestClient_RecvPacketIn(t *testing.T) {
+	s := setup(t, getTLSServerConfig(t))
+
+	connManager := NewConnManager()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	target1 := createTestTarget(t, targetID1, deviceID1, true)
+
+	err := connManager.Connect(ctx, target1)
+	assert.NoError(t, err)
+	conn, err := connManager.GetByTarget(ctx, targetID1)
+	assert.NoError(t, err)
+	assert.NotNil(t, conn)
+	ch := make(chan *p4api.PacketIn)
+
+	err = conn.PacketIn(ch)
+	assert.NoError(t, err)
+
+	for i := 0; i < numPacketIn; i++ {
+		payload := make([]byte, 4)
+		binary.LittleEndian.PutUint32(payload, uint32(i))
+		err = conn.PacketOut(&p4api.PacketOut{
+			Payload: payload,
+		})
+		assert.NoError(t, err)
+	}
+
+	counter := 1
+	for packetIn := range ch {
+		payload := packetIn.Payload
+		payloadValue := binary.LittleEndian.Uint32(payload)
+		log.Infow("Received Packet In", "packetIn", payloadValue)
+		if counter == numPacketIn {
+			break
+		}
+		counter++
+	}
+	s.Stop()
+
 }
 
 func TestConnManager_Get(t *testing.T) {
@@ -342,7 +413,6 @@ func TestClient_ReadEntities(t *testing.T) {
 	s := setup(t, getTLSServerConfig(t))
 
 	connManager := NewConnManager()
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
