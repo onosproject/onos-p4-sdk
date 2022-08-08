@@ -32,10 +32,35 @@ type Helper interface {
 	ValueSet(valueSetName string) (*p4configapi.ValueSet, error)
 	ControllerPacketMetadata(ControllerPacketMetadataName string) (*p4configapi.ControllerPacketMetadata, error)
 	ControllerPacketMetadataID(ControllerPacketMetadataName string) (uint32, error)
+	Extern(externName string) (*p4configapi.Extern, error)
+	ExternID(externName string) (uint32, error)
 }
 
 type p4Info struct {
 	p4Info *p4configapi.P4Info
+}
+
+func (p *p4Info) Extern(externName string) (*p4configapi.Extern, error) {
+	if p.p4Info == nil {
+		return nil, errors.NewInvalid("p4 info is not initialized")
+	}
+	for _, extern := range p.p4Info.Externs {
+		if extern.ExternTypeName == externName {
+			return extern, nil
+		}
+	}
+	return nil, errors.NewNotFound("extern  %s not found", externName)
+}
+
+func (p *p4Info) ExternID(externName string) (uint32, error) {
+	if p.p4Info == nil {
+		return 0, errors.NewInvalid("p4 info is not initialized")
+	}
+	extern, err := p.Extern(externName)
+	if err != nil {
+		return 0, err
+	}
+	return extern.ExternTypeId, nil
 }
 
 func (p *p4Info) ControllerPacketMetadata(controllerPacketMetadataName string) (*p4configapi.ControllerPacketMetadata, error) {

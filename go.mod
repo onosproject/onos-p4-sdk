@@ -5,7 +5,6 @@ go 1.17
 require (
 	github.com/atomix/atomix-go-client v0.6.2
 	github.com/gogo/protobuf v1.3.2
-	github.com/golang/protobuf v1.5.2
 	github.com/google/uuid v1.3.0
 	github.com/onosproject/onos-api/go v0.9.31
 	github.com/onosproject/onos-lib-go v0.8.17
@@ -14,6 +13,7 @@ require (
 	github.com/stretchr/testify v1.8.0
 	google.golang.org/genproto v0.0.0-20220803205849-8f55acc8769f
 	google.golang.org/grpc v1.48.0
+	google.golang.org/protobuf v1.28.0
 )
 
 require (
@@ -32,6 +32,7 @@ require (
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/golang/mock v1.6.0 // indirect
+	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0 // indirect
 	github.com/hashicorp/go-uuid v1.0.2 // indirect
@@ -65,7 +66,6 @@ require (
 	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e // indirect
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/ini.v1 v1.63.2 // indirect
 	gopkg.in/square/go-jose.v1 v1.1.2 // indirect
 	gopkg.in/square/go-jose.v2 v2.5.1 // indirect
