@@ -9,12 +9,14 @@ on:
       - master
       - main
   workflow_run:
-    workflows: [ "build" ]
+    workflows: [build]
+    branches: [main, master]
     types:
       - completed
 jobs:
   release:
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - uses: actions/checkout@v2
         with:
