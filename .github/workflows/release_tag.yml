@@ -13,9 +13,8 @@ on:
     types:
       - completed
 jobs:
-  build:
+  release:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v2
         with:
