@@ -1,5 +1,5 @@
 ![Build](https://github.com/onosproject/onos-p4-sdk/workflows/build/badge.svg)
-![Coverage](https://img.shields.io/badge/Coverage-63.4%25-yellow)
+![Coverage](https://img.shields.io/badge/Coverage-65.1%25-yellow)
 
 
 
