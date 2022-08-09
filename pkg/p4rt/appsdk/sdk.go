@@ -20,7 +20,7 @@ type TargetClient interface {
 	Read(ctx context.Context, entities []*p4api.Entity, ch chan *p4api.Entity, opts ...grpc.CallOption) error
 	Write(ctx context.Context, updates []*p4api.Update, atomicity p4api.WriteRequest_Atomicity, opts ...grpc.CallOption) (*p4api.WriteResponse, error)
 	GetForwardingPipelineConfig(ctx context.Context, responseType p4api.GetForwardingPipelineConfigRequest_ResponseType, opts ...grpc.CallOption) (*p4api.GetForwardingPipelineConfigResponse, error)
-	PacketIn(outputCh chan *p4api.PacketIn) error
+	PacketIn(ch chan *p4api.PacketIn) error
 	PacketOut(packetOut *p4api.PacketOut) error
 }
 
@@ -32,9 +32,9 @@ type targetClient struct {
 	electionID *p4api.Uint128
 }
 
-func (p *targetClient) PacketIn(outputCh chan *p4api.PacketIn) error {
+func (p *targetClient) PacketIn(ch chan *p4api.PacketIn) error {
 	log.Debugw("Receiving packet in")
-	return p.conn.PacketIn(outputCh)
+	return p.conn.PacketIn(ch)
 }
 
 func (p *targetClient) PacketOut(packetOut *p4api.PacketOut) error {
