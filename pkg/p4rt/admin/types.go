@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package p4rt
+package admin
 
 import (
 	p4configapi "github.com/p4lang/p4runtime/go/p4/config/v1"

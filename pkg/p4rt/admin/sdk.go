@@ -7,15 +7,14 @@ package admin
 import (
 	"context"
 	topoapi "github.com/onosproject/onos-api/go/onos/topo"
-	"github.com/onosproject/onos-p4-sdk/pkg/p4rt"
 	"github.com/onosproject/onos-p4-sdk/pkg/southbound"
 	p4api "github.com/p4lang/p4runtime/go/p4/v1"
 	"google.golang.org/grpc"
 )
 
-// AdminClient an admin interface for setting/getting pipeline configuration
-type AdminClient interface {
-	SetForwardingPipelineConfig(ctx context.Context, spec *p4rt.PipelineConfigSpec, opts ...grpc.CallOption) (*p4api.SetForwardingPipelineConfigResponse, error)
+// Client an admin interface for setting/getting pipeline configuration
+type Client interface {
+	SetForwardingPipelineConfig(ctx context.Context, spec *PipelineConfigSpec, opts ...grpc.CallOption) (*p4api.SetForwardingPipelineConfigResponse, error)
 	GetForwardingPipelineConfig(ctx context.Context, responseType p4api.GetForwardingPipelineConfigRequest_ResponseType, opts ...grpc.CallOption) (*p4api.GetForwardingPipelineConfigResponse, error)
 }
 
@@ -27,7 +26,7 @@ type adminClient struct {
 	electionID *p4api.Uint128
 }
 
-func (a *adminClient) SetForwardingPipelineConfig(ctx context.Context, spec *p4rt.PipelineConfigSpec, opts ...grpc.CallOption) (*p4api.SetForwardingPipelineConfigResponse, error) {
+func (a *adminClient) SetForwardingPipelineConfig(ctx context.Context, spec *PipelineConfigSpec, opts ...grpc.CallOption) (*p4api.SetForwardingPipelineConfigResponse, error) {
 	request := &p4api.SetForwardingPipelineConfigRequest{
 		Config: &p4api.ForwardingPipelineConfig{
 			P4DeviceConfig: spec.P4DeviceConfig,
@@ -53,4 +52,4 @@ func (a *adminClient) GetForwardingPipelineConfig(ctx context.Context, responseT
 	return a.conn.GetForwardingPipelineConfig(ctx, request, opts...)
 }
 
-var _ AdminClient = &adminClient{}
+var _ Client = &adminClient{}

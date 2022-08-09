@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package p4rt
+package appsdk
 
 import (
 	"context"

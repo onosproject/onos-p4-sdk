@@ -54,7 +54,8 @@ func (c *Controller) run() {
 	}
 }
 
-func (c *Controller) AdminClient(ctx context.Context, targetID topoapi.ID) (AdminClient, error) {
+// AdminClient returns an admin client for provisioning devices
+func (c *Controller) AdminClient(ctx context.Context, targetID topoapi.ID) (Client, error) {
 	targetEntity, err := c.topoStore.Get(ctx, targetID)
 	if err != nil {
 		return nil, err
@@ -112,7 +113,7 @@ func (c *Controller) AdminClient(ctx context.Context, targetID topoapi.ID) (Admi
 }
 
 // Client returns a master client for the given target
-func (c *Controller) Client(ctx context.Context, targetID topoapi.ID) (AdminClient, error) {
+func (c *Controller) Client(ctx context.Context, targetID topoapi.ID) (Client, error) {
 	targetEntity, err := c.topoStore.Get(ctx, targetID)
 	if err != nil {
 		return nil, err
