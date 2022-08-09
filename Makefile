@@ -11,6 +11,11 @@ all: test
 build-tools:=$(shell if [ ! -d "./build/build-tools" ]; then mkdir -p build && cd build && git clone https://github.com/onosproject/build-tools.git; fi)
 include ./build/build-tools/make/onf-common.mk
 
+build: # @HELP build the Go binaries (default)
+build:
+	go build github.com/onosproject/onos-p4-sdk/pkg/...
+
+
 mod-update: # @HELP Download the dependencies to the vendor folder
 	go mod tidy
 	go mod vendor
@@ -19,7 +24,7 @@ mod-lint: mod-update # @HELP ensure that the required dependencies are in place
 	bash -c "diff -u <(echo -n) <(git diff go.sum)"
 
 test: # @HELP run the unit tests and source code validation
-test: mod-lint linters license
+test: mod-lint build linters license
 	go test github.com/onosproject/onos-p4-sdk/pkg/...
 
 clean:: # @HELP remove all the build artifacts
