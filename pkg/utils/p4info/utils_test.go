@@ -20,18 +20,20 @@ var p4InfoBytes []byte
 var p4InfoTest p4configapi.P4Info
 
 const (
-	aclPreIngressTableName             = "ingress.acl_pre_ingress.acl_pre_ingress_table"
-	aclPreIngressTableID               = uint32(33554689)
-	aclPreIngressDirectCounterName     = "ingress.acl_pre_ingress.acl_pre_ingress_counter"
-	aclPreIngressDirectCounterID       = uint32(318767361)
-	aclDropAction                      = "acl_drop"
-	aclDropActionID                    = uint32(16777481)
-	aclIngressMeterName                = "ingress.acl_ingress.acl_ingress_meter"
-	aclIngressMeterID                  = uint32(352321792)
-	actionProfileWCMPGroupSelectorName = "ingress.routing.wcmp_group_selector"
-	actionProfileWCMPGroupSelectorID   = uint32(299650760)
-	noActionName                       = "NoAction"
-	noActionID                         = uint32(21257015)
+	aclPreIngressTableName               = "ingress.acl_pre_ingress.acl_pre_ingress_table"
+	aclPreIngressTableID                 = uint32(33554689)
+	aclPreIngressDirectCounterName       = "ingress.acl_pre_ingress.acl_pre_ingress_counter"
+	aclPreIngressDirectCounterID         = uint32(318767361)
+	aclDropAction                        = "acl_drop"
+	aclDropActionID                      = uint32(16777481)
+	aclIngressMeterName                  = "ingress.acl_ingress.acl_ingress_meter"
+	aclIngressMeterID                    = uint32(352321792)
+	actionProfileWCMPGroupSelectorName   = "ingress.routing.wcmp_group_selector"
+	actionProfileWCMPGroupSelectorID     = uint32(299650760)
+	noActionName                         = "NoAction"
+	noActionID                           = uint32(21257015)
+	packetInControllerPacketMetadataName = "packet_in"
+	packetInControllerPacketMetadataID   = uint32(81826293)
 )
 
 func TestMain(m *testing.M) {
@@ -41,6 +43,20 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 	os.Exit(m.Run())
+}
+
+func TestP4Info_ActionProfileID(t *testing.T) {
+	p4InfoHelper := NewHelper(&p4InfoTest)
+	actionProfileID, err := p4InfoHelper.ActionProfileID(actionProfileWCMPGroupSelectorName)
+	assert.NoError(t, err)
+	assert.Equal(t, actionProfileWCMPGroupSelectorID, actionProfileID)
+}
+
+func TestP4Info_ControllerPacketMetadata(t *testing.T) {
+	p4InfoHelper := NewHelper(&p4InfoTest)
+	packetInControllerPacketMetadata, err := p4InfoHelper.ControllerPacketMetadata(packetInControllerPacketMetadataName)
+	assert.NoError(t, err)
+	assert.Equal(t, packetInControllerPacketMetadata.Preamble.Id, packetInControllerPacketMetadataID)
 }
 
 func TestP4Info_TableID(t *testing.T) {
