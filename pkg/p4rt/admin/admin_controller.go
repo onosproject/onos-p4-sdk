@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package p4rt
+package admin
 
 import (
 	"context"
@@ -54,8 +54,8 @@ func (c *Controller) run() {
 	}
 }
 
-// Client returns a master client for the given target
-func (c *Controller) Client(ctx context.Context, targetID topoapi.ID) (TargetClient, error) {
+// AdminClient returns an admin client for provisioning devices
+func (c *Controller) AdminClient(ctx context.Context, targetID topoapi.ID) (Client, error) {
 	targetEntity, err := c.topoStore.Get(ctx, targetID)
 	if err != nil {
 		return nil, err
@@ -100,7 +100,65 @@ func (c *Controller) Client(ctx context.Context, targetID topoapi.ID) (TargetCli
 		return nil, errors.NewNotFound("connection not found for target", targetID)
 	}
 
-	return &targetClient{
+	return &adminClient{
+		targetID: targetID,
+		conn:     conn,
+		deviceID: p4rtServerInfo.DeviceID,
+		role:     controllerInfo.Role.Name,
+		electionID: &p4api.Uint128{
+			Low:  mastershipState.Term,
+			High: 0,
+		},
+	}, nil
+}
+
+// Client returns a master client for the given target
+func (c *Controller) Client(ctx context.Context, targetID topoapi.ID) (Client, error) {
+	targetEntity, err := c.topoStore.Get(ctx, targetID)
+	if err != nil {
+		return nil, err
+	}
+	mastershipState := &topoapi.P4RTMastershipState{}
+	err = targetEntity.GetAspect(mastershipState)
+	if err != nil {
+		return nil, err
+	}
+
+	controllerID := controllerutils.GetControllerID()
+	controllerEntity, err := c.topoStore.Get(ctx, controllerID)
+	if err != nil {
+		return nil, err
+	}
+
+	controllerInfo := &topoapi.ControllerInfo{}
+	err = controllerEntity.GetAspect(controllerInfo)
+	if err != nil {
+		return nil, err
+	}
+
+	if mastershipState.NodeId == "" {
+		return nil, errors.NewNotFound("Not found master connection  for target %s", targetID)
+	}
+	relation, err := c.topoStore.Get(ctx, topoapi.ID(mastershipState.NodeId))
+	if err != nil {
+		return nil, err
+	}
+	if relation.GetRelation().SrcEntityID != controllerID {
+		return nil, errors.NewNotFound("Not found master connection  for target %s", targetID)
+	}
+
+	p4rtServerInfo := &topoapi.P4RTServerInfo{}
+	err = targetEntity.GetAspect(p4rtServerInfo)
+	if err != nil {
+		return nil, err
+	}
+
+	conn, found := c.conns.Get(ctx, southbound.ConnID(relation.ID))
+	if !found {
+		return nil, errors.NewNotFound("connection not found for target", targetID)
+	}
+
+	return &adminClient{
 		targetID: targetID,
 		conn:     conn,
 		deviceID: p4rtServerInfo.DeviceID,

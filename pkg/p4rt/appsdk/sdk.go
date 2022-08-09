@@ -2,11 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package p4rt
+package appsdk
 
 import (
 	"context"
 	topoapi "github.com/onosproject/onos-api/go/onos/topo"
+	"github.com/onosproject/onos-p4-sdk/pkg/p4rt/admin"
 	"github.com/onosproject/onos-p4-sdk/pkg/southbound"
 	p4api "github.com/p4lang/p4runtime/go/p4/v1"
 	"google.golang.org/grpc"
@@ -18,7 +19,6 @@ type TargetClient interface {
 	Capabilities(ctx context.Context, opts ...grpc.CallOption) (*p4api.CapabilitiesResponse, error)
 	Read(ctx context.Context, entities []*p4api.Entity, opts ...grpc.CallOption) ([]*p4api.Entity, error)
 	Write(ctx context.Context, updates []*p4api.Update, atomicity p4api.WriteRequest_Atomicity, opts ...grpc.CallOption) (*p4api.WriteResponse, error)
-	SetForwardingPipelineConfig(ctx context.Context, spec *PipelineConfigSpec, opts ...grpc.CallOption) (*p4api.SetForwardingPipelineConfigResponse, error)
 	GetForwardingPipelineConfig(ctx context.Context, responseType p4api.GetForwardingPipelineConfigRequest_ResponseType, opts ...grpc.CallOption) (*p4api.GetForwardingPipelineConfigResponse, error)
 	PacketIn(outputCh chan *p4api.PacketIn) error
 	PacketOut(packetOut *p4api.PacketOut) error
@@ -43,7 +43,7 @@ func (p *targetClient) PacketOut(packetOut *p4api.PacketOut) error {
 }
 
 // SetForwardingPipelineConfig sets forwarding pipeline config
-func (p *targetClient) SetForwardingPipelineConfig(ctx context.Context, spec *PipelineConfigSpec, opts ...grpc.CallOption) (*p4api.SetForwardingPipelineConfigResponse, error) {
+func (p *targetClient) SetForwardingPipelineConfig(ctx context.Context, spec *admin.PipelineConfigSpec, opts ...grpc.CallOption) (*p4api.SetForwardingPipelineConfigResponse, error) {
 	request := &p4api.SetForwardingPipelineConfigRequest{
 		Config: &p4api.ForwardingPipelineConfig{
 			P4DeviceConfig: spec.P4DeviceConfig,
