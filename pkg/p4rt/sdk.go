@@ -18,7 +18,6 @@ type TargetClient interface {
 	Capabilities(ctx context.Context, opts ...grpc.CallOption) (*p4api.CapabilitiesResponse, error)
 	Read(ctx context.Context, entities []*p4api.Entity, opts ...grpc.CallOption) ([]*p4api.Entity, error)
 	Write(ctx context.Context, updates []*p4api.Update, atomicity p4api.WriteRequest_Atomicity, opts ...grpc.CallOption) (*p4api.WriteResponse, error)
-	SetForwardingPipelineConfig(ctx context.Context, spec *PipelineConfigSpec, opts ...grpc.CallOption) (*p4api.SetForwardingPipelineConfigResponse, error)
 	GetForwardingPipelineConfig(ctx context.Context, responseType p4api.GetForwardingPipelineConfigRequest_ResponseType, opts ...grpc.CallOption) (*p4api.GetForwardingPipelineConfigResponse, error)
 	PacketIn(outputCh chan *p4api.PacketIn) error
 	PacketOut(packetOut *p4api.PacketOut) error
