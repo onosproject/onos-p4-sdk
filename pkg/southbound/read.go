@@ -13,7 +13,7 @@ import (
 
 // ReadClient :
 type ReadClient interface {
-	ReadEntities(ctx context.Context, request *p4api.ReadRequest, opts ...grpc.CallOption) ([]*p4api.Entity, error)
+	ReadEntities(ctx context.Context, request *p4api.ReadRequest, ch chan *p4api.Entity, opts ...grpc.CallOption) error
 }
 
 type readClient struct {
@@ -21,24 +21,32 @@ type readClient struct {
 }
 
 // ReadEntities :
-func (r readClient) ReadEntities(ctx context.Context, request *p4api.ReadRequest, opts ...grpc.CallOption) ([]*p4api.Entity, error) {
+func (r readClient) ReadEntities(ctx context.Context, request *p4api.ReadRequest, outputCh chan *p4api.Entity, opts ...grpc.CallOption) error {
 	stream, err := r.p4runtimeClient.Read(ctx, request, opts...)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	var entities []*p4api.Entity
-	for {
-		rep, err := stream.Recv()
-		if err == io.EOF || err == context.Canceled {
-			break
-		}
-		if err != nil {
-			return nil, err
-		}
-		entities = append(entities, rep.Entities...)
+	go func() {
+		inputChan := newReadEntitiesStream(outputCh)
+		defer close(inputChan)
+		for {
+			rep, err := stream.Recv()
+			if err == io.EOF || err == context.Canceled {
+				break
+			}
+			if err != nil {
+				// TODO should we return the error and break the loop?
+				log.Warn(err)
+				continue
+			}
+			for _, entity := range rep.Entities {
+				inputChan <- entity
+			}
 
-	}
-	return entities, nil
+		}
+	}()
+	return nil
+
 }
 
 var _ ReadClient = &readClient{}

@@ -17,7 +17,7 @@ import (
 type TargetClient interface {
 	ID() topoapi.ID
 	Capabilities(ctx context.Context, opts ...grpc.CallOption) (*p4api.CapabilitiesResponse, error)
-	Read(ctx context.Context, entities []*p4api.Entity, opts ...grpc.CallOption) ([]*p4api.Entity, error)
+	Read(ctx context.Context, entities []*p4api.Entity, ch chan *p4api.Entity, opts ...grpc.CallOption) error
 	Write(ctx context.Context, updates []*p4api.Update, atomicity p4api.WriteRequest_Atomicity, opts ...grpc.CallOption) (*p4api.WriteResponse, error)
 	GetForwardingPipelineConfig(ctx context.Context, responseType p4api.GetForwardingPipelineConfigRequest_ResponseType, opts ...grpc.CallOption) (*p4api.GetForwardingPipelineConfigResponse, error)
 	PacketIn(outputCh chan *p4api.PacketIn) error
@@ -84,14 +84,14 @@ func (p *targetClient) Write(ctx context.Context, updates []*p4api.Update, atomi
 }
 
 // Read one or more P4 entities from the target.
-func (p *targetClient) Read(ctx context.Context, entities []*p4api.Entity, opts ...grpc.CallOption) ([]*p4api.Entity, error) {
+func (p *targetClient) Read(ctx context.Context, entities []*p4api.Entity, ch chan *p4api.Entity, opts ...grpc.CallOption) error {
 	request := &p4api.ReadRequest{
 		Role:     p.role,
 		DeviceId: p.deviceID,
 		Entities: entities,
 	}
 	log.Debugw("Reading entities", "entities", entities)
-	return p.conn.ReadEntities(ctx, request, opts...)
+	return p.conn.ReadEntities(ctx, request, ch, opts...)
 }
 
 // Capabilities return P4Runtime server capability
