@@ -51,13 +51,13 @@ func (c *client) SendArbitrationRequest(deviceID uint64, electionID uint64, role
 	return errors.FromGRPC(err)
 }
 
-func (c *client) ReadEntities(ctx context.Context, request *p4api.ReadRequest, opts ...grpc.CallOption) ([]*p4api.Entity, error) {
+func (c *client) ReadEntities(ctx context.Context, request *p4api.ReadRequest, ch chan *p4api.Entity, opts ...grpc.CallOption) error {
 	log.Debugw("Received read entities request", "request", request)
-	entities, err := c.readClient.ReadEntities(ctx, request, opts...)
+	err := c.readClient.ReadEntities(ctx, request, ch, opts...)
 	if err != nil {
-		return nil, errors.FromGRPC(err)
+		return errors.FromGRPC(err)
 	}
-	return entities, nil
+	return nil
 
 }
 

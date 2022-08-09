@@ -50,10 +50,18 @@ func (s testServer) Read(request *p4api.ReadRequest, server p4api.P4Runtime_Read
 	log.Infow("Read request is received", "request", request)
 	var entities []*p4api.Entity
 	entity1 := &p4api.Entity{
-		Entity: &p4api.Entity_TableEntry{},
+		Entity: &p4api.Entity_TableEntry{
+			TableEntry: &p4api.TableEntry{
+				TableId: uint32(123),
+			},
+		},
 	}
 	entity2 := &p4api.Entity{
-		Entity: &p4api.Entity_TableEntry{},
+		Entity: &p4api.Entity_TableEntry{
+			TableEntry: &p4api.TableEntry{
+				TableId: uint32(124),
+			},
+		},
 	}
 	entities = append(entities, entity1)
 	entities = append(entities, entity2)
@@ -423,10 +431,16 @@ func TestClient_ReadEntities(t *testing.T) {
 	conn, err := connManager.GetByTarget(ctx, targetID1)
 	assert.NoError(t, err)
 	assert.NotNil(t, conn)
-	entities, err := conn.ReadEntities(ctx, &p4api.ReadRequest{})
-	assert.NoError(t, err)
 
-	assert.Equal(t, 2, len(entities))
+	entityChan := make(chan *p4api.Entity)
+	err = conn.ReadEntities(ctx, &p4api.ReadRequest{}, entityChan)
+	assert.NoError(t, err)
+	entityCounter := 0
+	for entity := range entityChan {
+		t.Log(entity.GetTableEntry().TableId)
+		entityCounter++
+	}
+	assert.Equal(t, 2, entityCounter)
 
 	s.Stop()
 
