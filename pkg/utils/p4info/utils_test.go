@@ -57,7 +57,6 @@ func TestP4Info_ControllerPacketMetadata(t *testing.T) {
 	packetInControllerPacketMetadata, err := p4InfoHelper.ControllerPacketMetadata(packetInControllerPacketMetadataName)
 	assert.NoError(t, err)
 	assert.Equal(t, packetInControllerPacketMetadata.Preamble.Id, packetInControllerPacketMetadataID)
-
 }
 
 func TestP4Info_TableID(t *testing.T) {
