@@ -7,7 +7,6 @@ package topo
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"testing"
 	"time"
@@ -27,7 +26,7 @@ const (
 )
 
 func writeFile(file string, s string) {
-	err := ioutil.WriteFile(file, []byte(s), 0644)
+	err := os.WriteFile(file, []byte(s), 0644)
 	if err != nil {
 		fmt.Printf("error writing generated code to file: %s\n", err)
 		os.Exit(-1)
