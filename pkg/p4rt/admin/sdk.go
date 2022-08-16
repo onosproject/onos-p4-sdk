@@ -38,7 +38,7 @@ func (a *adminClient) SetForwardingPipelineConfig(ctx context.Context, spec *Pip
 		Action:     spec.Action,
 	}
 
-	log.Infow("Setting forwarding pipeline device config", "request", request, "pipeline config spec", spec)
+	log.Debugw("Setting forwarding pipeline device config", "request", request, "pipeline config spec", spec)
 	return a.conn.SetForwardingPipelineConfig(ctx, request, opts...)
 }
 
@@ -47,7 +47,7 @@ func (a *adminClient) GetForwardingPipelineConfig(ctx context.Context, responseT
 		DeviceId:     a.deviceID,
 		ResponseType: responseType,
 	}
-	log.Infow("Getting forwarding pipeline device config", "responseType", responseType)
+	log.Debugw("Getting forwarding pipeline device config", "responseType", responseType)
 	return a.conn.GetForwardingPipelineConfig(ctx, request, opts...)
 }
 
