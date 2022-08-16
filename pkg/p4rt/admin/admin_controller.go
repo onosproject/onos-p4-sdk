@@ -55,53 +55,53 @@ func (c *Controller) run() {
 }
 
 // Client returns a master client for the given target
-func (c *Controller) Client(ctx context.Context, targetID topoapi.ID) (Client, error) {
+func (c *Controller) Client(ctx context.Context, targetID topoapi.ID) (Client, *topoapi.Object, error) {
 	targetEntity, err := c.topoStore.Get(ctx, targetID)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	mastershipState := &topoapi.P4RTMastershipState{}
 	err = targetEntity.GetAspect(mastershipState)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	controllerID := controllerutils.GetControllerID()
 	controllerEntity, err := c.topoStore.Get(ctx, controllerID)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	controllerInfo := &topoapi.ControllerInfo{}
 	err = controllerEntity.GetAspect(controllerInfo)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if mastershipState.NodeId == "" {
-		return nil, errors.NewNotFound("Not found master connection  for target %s", targetID)
+		return nil, nil, errors.NewNotFound("Not found master connection  for target %s", targetEntity.ID)
 	}
 	relation, err := c.topoStore.Get(ctx, topoapi.ID(mastershipState.NodeId))
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if relation.GetRelation().SrcEntityID != controllerID {
-		return nil, errors.NewNotFound("Not found master connection  for target %s", targetID)
+		return nil, nil, errors.NewNotFound("Not found master connection  for target %s", targetEntity.ID)
 	}
 
 	p4rtServerInfo := &topoapi.P4RTServerInfo{}
 	err = targetEntity.GetAspect(p4rtServerInfo)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	conn, found := c.conns.Get(ctx, southbound.ConnID(relation.ID))
 	if !found {
-		return nil, errors.NewNotFound("connection not found for target", targetID)
+		return nil, nil, errors.NewNotFound("connection not found for target", targetEntity.ID)
 	}
 
 	return &adminClient{
-		targetID: targetID,
+		targetID: targetEntity.ID,
 		conn:     conn,
 		deviceID: p4rtServerInfo.DeviceID,
 		role:     controllerInfo.Role.Name,
@@ -109,7 +109,7 @@ func (c *Controller) Client(ctx context.Context, targetID topoapi.ID) (Client, e
 			Low:  mastershipState.Term,
 			High: 0,
 		},
-	}, nil
+	}, targetEntity, nil
 }
 
 func (c *Controller) start() error {
