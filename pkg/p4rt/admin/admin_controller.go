@@ -13,6 +13,7 @@ import (
 	"github.com/onosproject/onos-p4-sdk/pkg/controller/connection"
 	"github.com/onosproject/onos-p4-sdk/pkg/controller/mastership"
 	"github.com/onosproject/onos-p4-sdk/pkg/controller/node"
+	"github.com/onosproject/onos-p4-sdk/pkg/controller/service"
 	"github.com/onosproject/onos-p4-sdk/pkg/controller/target"
 	controllerutils "github.com/onosproject/onos-p4-sdk/pkg/controller/utils"
 	"github.com/onosproject/onos-p4-sdk/pkg/southbound"
@@ -152,11 +153,15 @@ func (c *Controller) start() error {
 		return err
 	}
 	// Starts mastership controller
+
+	err = c.startServiceController(topoStore)
+	if err != nil {
+		return err
+	}
 	err = c.startMastershipController(topoStore, conns)
 	if err != nil {
 		return err
 	}
-
 	log.Info("P4RT controller is running")
 	return nil
 }
@@ -183,4 +188,9 @@ func (c *Controller) startTargetController(topo topo.Store, conns southbound.Con
 func (c *Controller) startMastershipController(topo topo.Store, conns southbound.ConnManager) error {
 	mastershipController := mastership.NewController(topo, conns)
 	return mastershipController.Start()
+}
+
+func (c *Controller) startServiceController(topo topo.Store) error {
+	serviceController := service.NewController(topo)
+	return serviceController.Start()
 }
