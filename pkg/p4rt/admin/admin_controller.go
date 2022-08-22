@@ -8,6 +8,7 @@ import (
 	"context"
 	topoapi "github.com/onosproject/onos-api/go/onos/topo"
 	"github.com/onosproject/onos-lib-go/pkg/certs"
+	"github.com/onosproject/onos-lib-go/pkg/env"
 	"github.com/onosproject/onos-lib-go/pkg/errors"
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 	"github.com/onosproject/onos-p4-sdk/pkg/controller/connection"
@@ -113,7 +114,7 @@ func (c *Controller) Client(ctx context.Context, targetID topoapi.ID) (Client, *
 		targetID: targetEntity.ID,
 		conn:     conn,
 		deviceID: p4rtServerInfo.DeviceID,
-		role:     controllerInfo.Role.Name,
+		role:     env.GetServiceName(),
 		electionID: &p4api.Uint128{
 			Low:  mastershipState.Term,
 			High: 0,
