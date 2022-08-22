@@ -55,21 +55,21 @@ func (c *Controller) run() {
 }
 
 // Client returns a master client for the given target
-func (c *Controller) Client(ctx context.Context, targetID topoapi.ID) (Client, *topoapi.Object, error) {
+func (c *Controller) Client(ctx context.Context, targetID topoapi.ID) (Client, *topoapi.Object, *topoapi.Object, error) {
 
 	targetEntity, err := c.topoStore.Get(ctx, targetID)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 	serviceEntity, err := c.topoStore.Get(ctx, controllerutils.GetServiceID(targetID))
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	serviceAspect := &topoapi.Service{}
 	err = serviceEntity.GetAspect(serviceAspect)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	mastershipState := serviceAspect.GetMastershipstate()
@@ -77,35 +77,35 @@ func (c *Controller) Client(ctx context.Context, targetID topoapi.ID) (Client, *
 	controllerID := controllerutils.GetControllerID()
 	controllerEntity, err := c.topoStore.Get(ctx, controllerID)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	controllerInfo := &topoapi.ControllerInfo{}
 	err = controllerEntity.GetAspect(controllerInfo)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	if mastershipState.ConnectionID == "" {
-		return nil, nil, errors.NewNotFound("Not found master connection  for target %s", targetID)
+		return nil, nil, nil, errors.NewNotFound("Not found master connection  for target %s", targetID)
 	}
 	relation, err := c.topoStore.Get(ctx, topoapi.ID(mastershipState.ConnectionID))
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 	if relation.GetRelation().SrcEntityID != controllerID {
-		return nil, nil, errors.NewNotFound("Not found master connection  for target %s", targetID)
+		return nil, nil, nil, errors.NewNotFound("Not found master connection  for target %s", targetID)
 	}
 
 	p4rtServerInfo := &topoapi.P4RTServerInfo{}
 	err = targetEntity.GetAspect(p4rtServerInfo)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	conn, found := c.conns.Get(ctx, southbound.ConnID(relation.ID))
 	if !found {
-		return nil, nil, errors.NewNotFound("connection not found for target", targetID)
+		return nil, nil, nil, errors.NewNotFound("connection not found for target", targetID)
 	}
 
 	return &adminClient{
@@ -117,7 +117,7 @@ func (c *Controller) Client(ctx context.Context, targetID topoapi.ID) (Client, *
 			Low:  mastershipState.Term,
 			High: 0,
 		},
-	}, targetEntity, nil
+	}, targetEntity, serviceEntity, nil
 }
 
 func (c *Controller) start() error {
