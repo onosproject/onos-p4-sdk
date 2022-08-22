@@ -196,6 +196,7 @@ func (r *Reconciler) Reconcile(id controller.ID) (controller.Result, error) {
 					log.Infow("Current node is selected as master, updating mastership status", "targetID", targetEntity.ID, "election ID", responseElectionID)
 					mastership.ConnectionID = string(targetRelation.ID)
 					mastership.Term = responseElectionID
+					mastership.Role = response.Arbitration.Role.Name
 					//mastership.Role = response.Arbitration.Role.Name
 					serviceAspect.Mastershipstate = mastership
 					err = serviceEntity.SetAspect(serviceAspect)
