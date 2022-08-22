@@ -61,11 +61,18 @@ func (c *Controller) Client(ctx context.Context, targetID topoapi.ID) (TargetCli
 	if err != nil {
 		return nil, err
 	}
-	mastershipState := &topoapi.P4RTMastershipState{}
-	err = targetEntity.GetAspect(mastershipState)
+	serviceEntity, err := c.topoStore.Get(ctx, controllerutils.GetServiceID(targetID))
 	if err != nil {
 		return nil, err
 	}
+
+	serviceAspect := &topoapi.Service{}
+	err = serviceEntity.GetAspect(serviceAspect)
+	if err != nil {
+		return nil, err
+	}
+
+	mastershipState := serviceAspect.GetMastershipstate()
 
 	controllerID := controllerutils.GetControllerID()
 	controllerEntity, err := c.topoStore.Get(ctx, controllerID)
@@ -79,10 +86,10 @@ func (c *Controller) Client(ctx context.Context, targetID topoapi.ID) (TargetCli
 		return nil, err
 	}
 
-	if mastershipState.NodeId == "" {
+	if mastershipState.ConnectionID == "" {
 		return nil, errors.NewNotFound("Not found master connection  for target %s", targetID)
 	}
-	relation, err := c.topoStore.Get(ctx, topoapi.ID(mastershipState.NodeId))
+	relation, err := c.topoStore.Get(ctx, topoapi.ID(mastershipState.ConnectionID))
 	if err != nil {
 		return nil, err
 	}
@@ -145,6 +152,11 @@ func (c *Controller) start() error {
 		return err
 	}
 	// Starts mastership controller
+
+	err = c.startServiceController(topoStore)
+	if err != nil {
+		return err
+	}
 	err = c.startMastershipController(topoStore, conns)
 	if err != nil {
 		return err
@@ -178,7 +190,6 @@ func (c *Controller) startMastershipController(topo topo.Store, conns southbound
 	return mastershipController.Start()
 }
 
-// startServiceController starts service controller
 func (c *Controller) startServiceController(topo topo.Store) error {
 	serviceController := service.NewController(topo)
 	return serviceController.Start()

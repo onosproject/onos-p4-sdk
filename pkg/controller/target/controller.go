@@ -29,6 +29,10 @@ func NewController(topo topo.Store, conns southbound.ConnManager) *controller.Co
 	c.Watch(&TopoWatcher{
 		topo: topo,
 	})
+	c.Watch(&ConnWatcher{
+		conns: conns,
+	})
+
 	c.Reconcile(&Reconciler{
 		conns: conns,
 		topo:  topo,
@@ -48,20 +52,22 @@ func (r *Reconciler) Reconcile(id controller.ID) (controller.Result, error) {
 	defer cancel()
 
 	targetID := id.Value.(topoapi.ID)
-	log.Infow("Reconciling Target", "Target ID", targetID)
+
+	log.Infow("Reconciling target connection", "Target ID", targetID)
 	target, err := r.topo.Get(ctx, targetID)
 	if err != nil {
 		if !errors.IsNotFound(err) {
-			log.Errorf("Failed reconciling Target", "Target ID", targetID, "error", err)
+			log.Errorf("Failed reconciling Target connection; cannot retrieve target", "Target ID", targetID, "error", err)
 			return controller.Result{}, err
 		}
 		return r.disconnect(ctx, targetID)
 	}
+
 	return r.connect(ctx, target)
 }
 
 func (r *Reconciler) connect(ctx context.Context, target *topoapi.Object) (controller.Result, error) {
-	log.Infof("Connecting to Target '%s'", target.ID)
+	log.Infow("Connecting to Target", "targetID", target.ID)
 	if err := r.conns.Connect(ctx, target); err != nil {
 		if !errors.IsAlreadyExists(err) {
 			log.Errorw("Failed connecting to Target", "Target ID", target.ID, "error", err)

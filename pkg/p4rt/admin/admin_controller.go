@@ -56,15 +56,23 @@ func (c *Controller) run() {
 
 // Client returns a master client for the given target
 func (c *Controller) Client(ctx context.Context, targetID topoapi.ID) (Client, *topoapi.Object, error) {
+
 	targetEntity, err := c.topoStore.Get(ctx, targetID)
 	if err != nil {
 		return nil, nil, err
 	}
-	mastershipState := &topoapi.P4RTMastershipState{}
-	err = targetEntity.GetAspect(mastershipState)
+	serviceEntity, err := c.topoStore.Get(ctx, controllerutils.GetServiceID(targetID))
 	if err != nil {
 		return nil, nil, err
 	}
+
+	serviceAspect := &topoapi.Service{}
+	err = serviceEntity.GetAspect(serviceAspect)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	mastershipState := serviceAspect.GetMastershipstate()
 
 	controllerID := controllerutils.GetControllerID()
 	controllerEntity, err := c.topoStore.Get(ctx, controllerID)
@@ -78,15 +86,15 @@ func (c *Controller) Client(ctx context.Context, targetID topoapi.ID) (Client, *
 		return nil, nil, err
 	}
 
-	if mastershipState.NodeId == "" {
-		return nil, nil, errors.NewNotFound("Not found master connection  for target %s", targetEntity.ID)
+	if mastershipState.ConnectionID == "" {
+		return nil, nil, errors.NewNotFound("Not found master connection  for target %s", targetID)
 	}
-	relation, err := c.topoStore.Get(ctx, topoapi.ID(mastershipState.NodeId))
+	relation, err := c.topoStore.Get(ctx, topoapi.ID(mastershipState.ConnectionID))
 	if err != nil {
 		return nil, nil, err
 	}
 	if relation.GetRelation().SrcEntityID != controllerID {
-		return nil, nil, errors.NewNotFound("Not found master connection  for target %s", targetEntity.ID)
+		return nil, nil, errors.NewNotFound("Not found master connection  for target %s", targetID)
 	}
 
 	p4rtServerInfo := &topoapi.P4RTServerInfo{}
@@ -97,7 +105,7 @@ func (c *Controller) Client(ctx context.Context, targetID topoapi.ID) (Client, *
 
 	conn, found := c.conns.Get(ctx, southbound.ConnID(relation.ID))
 	if !found {
-		return nil, nil, errors.NewNotFound("connection not found for target", targetEntity.ID)
+		return nil, nil, errors.NewNotFound("connection not found for target", targetID)
 	}
 
 	return &adminClient{

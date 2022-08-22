@@ -9,8 +9,8 @@ import (
 	"sync"
 
 	topoapi "github.com/onosproject/onos-api/go/onos/topo"
+
 	"github.com/onosproject/onos-lib-go/pkg/controller"
-	"github.com/onosproject/onos-p4-sdk/pkg/controller/utils"
 	"github.com/onosproject/onos-p4-sdk/pkg/store/topo"
 )
 
@@ -40,17 +40,17 @@ func (w *TopoWatcher) Start(ch chan<- controller.ID) error {
 		return err
 	}
 	w.cancel = cancel
-
 	go func() {
-		ch <- controller.NewID(utils.GetServiceID())
 		for event := range eventCh {
 			log.Debugw("Received topo event", "topo object ID", event.Object.ID)
-			if entity, ok := event.Object.Obj.(*topoapi.Object_Entity); ok &&
-				entity.Entity.KindID == topoapi.ServiceKind {
-				ch <- controller.NewID(event.Object.ID)
+			if _, ok := event.Object.Obj.(*topoapi.Object_Entity); ok {
+				log.Debugw("Event entity", "entity", event.Object)
+				err = event.Object.GetAspect(&topoapi.P4RTServerInfo{})
+				if err == nil {
+					ch <- controller.NewID(event.Object.ID)
+				}
 			}
 		}
-		close(ch)
 	}()
 	return nil
 }

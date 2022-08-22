@@ -6,49 +6,46 @@ package service
 
 import (
 	"context"
-	"time"
-
 	gogotypes "github.com/gogo/protobuf/types"
+	"time"
 
 	"github.com/onosproject/onos-lib-go/pkg/errors"
 
 	topoapi "github.com/onosproject/onos-api/go/onos/topo"
-
 	"github.com/onosproject/onos-lib-go/pkg/controller"
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 	"github.com/onosproject/onos-p4-sdk/pkg/controller/utils"
 	"github.com/onosproject/onos-p4-sdk/pkg/store/topo"
 )
 
+var log = logging.GetLogger()
+
 const (
 	defaultTimeout = 30 * time.Second
 )
 
-var log = logging.GetLogger()
-
-// NewController returns a new service entity controller
+// NewController returns a new P4RT target  controller
 func NewController(topo topo.Store) *controller.Controller {
-	c := controller.NewController("service")
+	c := controller.NewController("target")
 	c.Watch(&TopoWatcher{
 		topo: topo,
 	})
-
 	c.Reconcile(&Reconciler{
 		topo: topo,
 	})
-
 	return c
 }
 
-// Reconciler is a service entity reconciler
+// Reconciler reconciles P4RT connections
 type Reconciler struct {
 	topo topo.Store
 }
 
-func (r *Reconciler) createServiceEntity(ctx context.Context, serviceID topoapi.ID) error {
-	log.Infow("Creating P4RT service entity", "service ID", serviceID)
+func (r *Reconciler) createServiceEntity(ctx context.Context, targetID topoapi.ID) (controller.Result, error) {
+	serviceEntityID := utils.GetServiceID(targetID)
+	log.Infow("Creating service entity", "service entity ID", serviceEntityID)
 	object := &topoapi.Object{
-		ID:   utils.GetServiceID(),
+		ID:   serviceEntityID,
 		Type: topoapi.Object_ENTITY,
 		Obj: &topoapi.Object_Entity{
 			Entity: &topoapi.Entity{
@@ -59,37 +56,66 @@ func (r *Reconciler) createServiceEntity(ctx context.Context, serviceID topoapi.
 		Labels:  map[string]string{},
 	}
 
-	err := r.topo.Create(ctx, object)
-	if err != nil && !errors.IsAlreadyExists(err) {
-		log.Warnw("Creating service entity failed", "service ID", serviceID, "error", err)
-		return err
+	serviceAspect := &topoapi.Service{
+		TargetID:        string(targetID),
+		Mastershipstate: &topoapi.P4RTMastershipState{},
 	}
 
-	return nil
-
-}
-
-// Reconcile reconciles the P4RT controller entities
-func (r *Reconciler) Reconcile(id controller.ID) (controller.Result, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
-	defer cancel()
-
-	serviceID := id.Value.(topoapi.ID)
-	log.Infow("Reconciling service entity", "service ID", serviceID)
-	_, err := r.topo.Get(ctx, serviceID)
-	if err == nil {
-		log.Infow("Service entity exists already", "serviceID", serviceID)
-		return controller.Result{}, nil
-	} else if !errors.IsNotFound(err) {
-		log.Warnw("Failed to reconcile service entity", "service ID", serviceID, "error", err)
+	err := object.SetAspect(serviceAspect)
+	if err != nil {
 		return controller.Result{}, err
 	}
 
-	// Create the service entity
-	if err := r.createServiceEntity(ctx, serviceID); err != nil {
-		log.Warnw("Failed to create the service entity", "service ID", serviceID, "error", err)
+	err = r.topo.Create(ctx, object)
+	if err != nil && !errors.IsAlreadyExists(err) {
+		log.Warnw("Creating service entity failed", "service entity ID", serviceEntityID, "error", err)
 		return controller.Result{}, err
 	}
 
 	return controller.Result{}, nil
+
+}
+
+func (r *Reconciler) deleteServiceEntity(ctx context.Context, targetID topoapi.ID) (controller.Result, error) {
+	serviceEntityID := utils.GetServiceID(targetID)
+	log.Infow("Deleting service entity", "service entity ID", serviceEntityID, "targetID", targetID)
+	serviceEntity, err := r.topo.Get(ctx, serviceEntityID)
+	if err != nil {
+		if !errors.IsNotFound(err) {
+			log.Errorw("Failed retrieving service entity", "service entity ID", serviceEntityID, "targetID", targetID, "error", err)
+			return controller.Result{}, err
+		}
+		return controller.Result{}, nil
+	}
+
+	err = r.topo.Delete(ctx, serviceEntity)
+	if err != nil {
+		if !errors.IsNotFound(err) {
+			log.Errorw("Failed deleting service entity", "service entity ID", serviceEntityID, "targetID", targetID, "error", err)
+			return controller.Result{}, err
+		}
+		return controller.Result{}, nil
+	}
+	return controller.Result{}, nil
+
+}
+
+// Reconcile reconciles a connection for a P4RT target
+func (r *Reconciler) Reconcile(id controller.ID) (controller.Result, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
+	defer cancel()
+
+	targetID := id.Value.(topoapi.ID)
+	log.Infow("Reconciling service entity for target", "Target ID", targetID)
+	_, err := r.topo.Get(ctx, targetID)
+	if err != nil {
+		if !errors.IsNotFound(err) {
+			log.Errorf("Failed reconciling service entity for target", "Target ID", targetID, "error", err)
+			return controller.Result{}, err
+		}
+		return r.deleteServiceEntity(ctx, targetID)
+	}
+
+	return r.createServiceEntity(ctx, targetID)
+
 }
