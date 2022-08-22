@@ -43,11 +43,23 @@ func (w *TopoWatcher) Start(ch chan<- controller.ID) error {
 	go func() {
 		for event := range eventCh {
 			log.Debugw("Received topo event", "topo object ID", event.Object.ID)
-			if _, ok := event.Object.Obj.(*topoapi.Object_Entity); ok {
+			if entity, ok := event.Object.Obj.(*topoapi.Object_Entity); ok {
 				log.Debugw("Event entity", "entity", event.Object)
 				err = event.Object.GetAspect(&topoapi.P4RTServerInfo{})
 				if err == nil {
 					ch <- controller.NewID(event.Object.ID)
+				}
+				if entity.Entity.KindID == topoapi.ServiceKind {
+					serviceAspect := &topoapi.Service{}
+					err = event.Object.GetAspect(serviceAspect)
+					if err == nil {
+						ch <- controller.NewID(topoapi.ID(serviceAspect.TargetID))
+					}
+				}
+			}
+			if relation, ok := event.Object.Obj.(*topoapi.Object_Relation); ok {
+				if relation.Relation.KindID == topoapi.ControlsKind {
+					ch <- controller.NewID(relation.Relation.TgtEntityID)
 				}
 			}
 		}

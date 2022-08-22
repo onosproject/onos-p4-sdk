@@ -41,7 +41,35 @@ type Reconciler struct {
 	topo topo.Store
 }
 
-func (r *Reconciler) createServiceEntity(ctx context.Context, targetID topoapi.ID) (controller.Result, error) {
+func (r *Reconciler) createServiceRelation(ctx context.Context, targetID topoapi.ID) (bool, error) {
+	relationID := utils.GetServiceID(targetID) + ":" + targetID
+
+	object := &topoapi.Object{
+		ID:   relationID,
+		Type: topoapi.Object_RELATION,
+		Obj: &topoapi.Object_Relation{
+			Relation: &topoapi.Relation{
+				KindID:      topoapi.ControlsKind,
+				SrcEntityID: utils.GetServiceID(targetID),
+				TgtEntityID: targetID,
+			},
+		},
+	}
+
+	err := r.topo.Create(ctx, object)
+	if err != nil {
+		if !errors.IsAlreadyExists(err) {
+			log.Warnw("Creating service control relation failed", "relation ID", relationID, "error", err)
+			return false, err
+		}
+		return false, nil
+	}
+
+	return true, nil
+
+}
+
+func (r *Reconciler) createServiceEntity(ctx context.Context, targetID topoapi.ID) (bool, error) {
 	serviceEntityID := utils.GetServiceID(targetID)
 	log.Infow("Creating service entity", "service entity ID", serviceEntityID)
 	object := &topoapi.Object{
@@ -63,16 +91,18 @@ func (r *Reconciler) createServiceEntity(ctx context.Context, targetID topoapi.I
 
 	err := object.SetAspect(serviceAspect)
 	if err != nil {
-		return controller.Result{}, err
+		return false, err
 	}
 
 	err = r.topo.Create(ctx, object)
-	if err != nil && !errors.IsAlreadyExists(err) {
-		log.Warnw("Creating service entity failed", "service entity ID", serviceEntityID, "error", err)
-		return controller.Result{}, err
+	if err != nil {
+		if !errors.IsAlreadyExists(err) {
+			log.Warnw("Creating service entity failed", "service entity ID", serviceEntityID, "error", err)
+			return false, err
+		}
+		return false, nil
 	}
-
-	return controller.Result{}, nil
+	return true, nil
 
 }
 
@@ -106,7 +136,7 @@ func (r *Reconciler) Reconcile(id controller.ID) (controller.Result, error) {
 	defer cancel()
 
 	targetID := id.Value.(topoapi.ID)
-	log.Infow("Reconciling service entity for target", "Target ID", targetID)
+	log.Infow("Reconciling service entity and control relation for target", "Target ID", targetID)
 	_, err := r.topo.Get(ctx, targetID)
 	if err != nil {
 		if !errors.IsNotFound(err) {
@@ -116,6 +146,19 @@ func (r *Reconciler) Reconcile(id controller.ID) (controller.Result, error) {
 		return r.deleteServiceEntity(ctx, targetID)
 	}
 
-	return r.createServiceEntity(ctx, targetID)
+	if ok, err := r.createServiceEntity(ctx, targetID); err != nil {
+		return controller.Result{}, err
+	} else if ok {
+		return controller.Result{}, nil
+	}
+
+	if ok, err := r.createServiceRelation(ctx, targetID); err != nil {
+		return controller.Result{}, err
+	} else if ok {
+		return controller.Result{}, nil
+	}
+	log.Info("Here 2")
+
+	return controller.Result{}, nil
 
 }
