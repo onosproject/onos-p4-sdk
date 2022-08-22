@@ -52,7 +52,7 @@ func (r *Reconciler) Reconcile(id controller.ID) (controller.Result, error) {
 	defer cancel()
 
 	connID := id.Value.(southbound.ConnID)
-	log.Infow("Reconciling Connection Relation", "connection ID", connID)
+	log.Infow("Reconciling Connection relation", "connection ID", connID)
 	conn, ok := r.conns.Get(ctx, connID)
 	if !ok {
 		return r.deleteRelation(ctx, connID)
@@ -64,7 +64,7 @@ func (r *Reconciler) createRelation(ctx context.Context, conn southbound.Conn) (
 	_, err := r.topo.Get(ctx, topoapi.ID(conn.ID()))
 	if err != nil {
 		if !errors.IsNotFound(err) {
-			log.Errorw("Failed creating CONNECTION relation", "connection ID", conn.ID(), "error", err)
+			log.Errorw("Failed creating CONNECTION relation", "connection relation ID", conn.ID(), "error", err)
 			return controller.Result{}, err
 		}
 		log.Infow("Creating CONNECTION relation", "connection relation ID", conn.ID())

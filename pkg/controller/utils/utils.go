@@ -13,7 +13,7 @@ import (
 // GetControllerID gets controller URI
 func GetControllerID() topoapi.ID {
 	return topoapi.ID(uri.NewURI(
-		uri.WithScheme("p4rt"),
+		uri.WithScheme("app"),
 		uri.WithOpaque(env.GetPodID())).String())
 }
 
@@ -21,6 +21,6 @@ func GetControllerID() topoapi.ID {
 func GetServiceID(targetID topoapi.ID) topoapi.ID {
 	opaque := env.GetServiceName() + "/" + string(targetID)
 	return topoapi.ID(uri.NewURI(
-		uri.WithScheme("p4rt"),
+		uri.WithScheme("service"),
 		uri.WithOpaque(opaque)).String())
 }

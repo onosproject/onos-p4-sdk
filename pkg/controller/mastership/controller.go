@@ -49,19 +49,19 @@ func (r *Reconciler) Reconcile(id controller.ID) (controller.Result, error) {
 	defer cancel()
 
 	serviceID := id.Value.(topoapi.ID)
-	log.Infow("Reconciling mastership election for the P4RT target", "application ID", serviceID)
+	log.Infow("Reconciling mastership election for the P4RT target", "service ID", serviceID)
 	serviceEntity, err := r.topo.Get(ctx, serviceID)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return controller.Result{}, nil
 		}
-		log.Warnw("Failed to reconcile mastership election for the P4RT target", "application ID", serviceID, "error", err)
+		log.Warnw("Failed to reconcile mastership election for the P4RT target", "service ID", serviceID, "error", err)
 		return controller.Result{}, err
 	}
 	serviceAspect := &topoapi.Service{}
 	err = serviceEntity.GetAspect(serviceAspect)
 	if err != nil {
-		log.Warnw("Failed to reconcile mastership election for the P4RT target", "application ID", serviceID, "error", err)
+		log.Warnw("Failed to reconcile mastership election for the P4RT target", "service ID", serviceID, "error", err)
 		return controller.Result{}, err
 	}
 
@@ -197,7 +197,6 @@ func (r *Reconciler) Reconcile(id controller.ID) (controller.Result, error) {
 					mastership.ConnectionID = string(targetRelation.ID)
 					mastership.Term = responseElectionID
 					mastership.Role = response.Arbitration.Role.Name
-					//mastership.Role = response.Arbitration.Role.Name
 					serviceAspect.Mastershipstate = mastership
 					err = serviceEntity.SetAspect(serviceAspect)
 					if err != nil {
