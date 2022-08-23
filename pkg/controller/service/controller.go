@@ -157,7 +157,6 @@ func (r *Reconciler) Reconcile(id controller.ID) (controller.Result, error) {
 	} else if ok {
 		return controller.Result{}, nil
 	}
-	log.Info("Here 2")
 
 	return controller.Result{}, nil
 
