@@ -6,6 +6,7 @@ package node
 
 import (
 	"context"
+	"github.com/onosproject/onos-lib-go/pkg/env"
 	"time"
 
 	gogotypes "github.com/gogo/protobuf/types"
@@ -66,7 +67,7 @@ func (r *Reconciler) createControllerEntity(ctx context.Context, controllerID to
 	}
 	controllerAspect := &topoapi.ControllerInfo{
 		Role: &topoapi.ControllerRole{
-			Name: "",
+			Name: env.GetServiceName(),
 		},
 		Type: topoapi.ControllerInfo_P4RUNTIME,
 	}

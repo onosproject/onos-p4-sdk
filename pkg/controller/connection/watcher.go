@@ -92,7 +92,7 @@ func (w *TopoWatcher) Start(ch chan<- controller.ID) error {
 		for event := range eventCh {
 			log.Debugw("Received topo event", "topo object ID", event.Object.ID)
 			if relation, ok := event.Object.Obj.(*topoapi.Object_Relation); ok {
-				if relation.Relation.KindID == topoapi.CONTROLS &&
+				if relation.Relation.KindID == topoapi.ConnectionKind &&
 					relation.Relation.SrcEntityID == utils.GetControllerID() {
 					ch <- controller.NewID(southbound.ConnID(event.Object.ID))
 				}

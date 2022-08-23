@@ -6,7 +6,7 @@ require (
 	github.com/atomix/atomix-go-client v0.6.2
 	github.com/gogo/protobuf v1.3.2
 	github.com/google/uuid v1.3.0
-	github.com/onosproject/onos-api/go v0.9.31
+	github.com/onosproject/onos-api/go v0.9.36
 	github.com/onosproject/onos-lib-go v0.8.17
 	github.com/onosproject/onos-topo v0.9.7
 	github.com/p4lang/p4runtime v1.4.0-rc.5

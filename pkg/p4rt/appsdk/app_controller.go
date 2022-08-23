@@ -8,11 +8,13 @@ import (
 	"context"
 	topoapi "github.com/onosproject/onos-api/go/onos/topo"
 	"github.com/onosproject/onos-lib-go/pkg/certs"
+	"github.com/onosproject/onos-lib-go/pkg/env"
 	"github.com/onosproject/onos-lib-go/pkg/errors"
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 	"github.com/onosproject/onos-p4-sdk/pkg/controller/connection"
 	"github.com/onosproject/onos-p4-sdk/pkg/controller/mastership"
 	"github.com/onosproject/onos-p4-sdk/pkg/controller/node"
+	"github.com/onosproject/onos-p4-sdk/pkg/controller/service"
 	"github.com/onosproject/onos-p4-sdk/pkg/controller/target"
 	controllerutils "github.com/onosproject/onos-p4-sdk/pkg/controller/utils"
 	"github.com/onosproject/onos-p4-sdk/pkg/southbound"
@@ -60,11 +62,18 @@ func (c *Controller) Client(ctx context.Context, targetID topoapi.ID) (TargetCli
 	if err != nil {
 		return nil, err
 	}
-	mastershipState := &topoapi.P4RTMastershipState{}
-	err = targetEntity.GetAspect(mastershipState)
+	serviceEntity, err := c.topoStore.Get(ctx, controllerutils.GetServiceID(targetID))
 	if err != nil {
 		return nil, err
 	}
+
+	serviceAspect := &topoapi.Service{}
+	err = serviceEntity.GetAspect(serviceAspect)
+	if err != nil {
+		return nil, err
+	}
+
+	mastershipState := serviceAspect.GetMastershipstate()
 
 	controllerID := controllerutils.GetControllerID()
 	controllerEntity, err := c.topoStore.Get(ctx, controllerID)
@@ -78,10 +87,10 @@ func (c *Controller) Client(ctx context.Context, targetID topoapi.ID) (TargetCli
 		return nil, err
 	}
 
-	if mastershipState.NodeId == "" {
+	if mastershipState.ConnectionID == "" {
 		return nil, errors.NewNotFound("Not found master connection  for target %s", targetID)
 	}
-	relation, err := c.topoStore.Get(ctx, topoapi.ID(mastershipState.NodeId))
+	relation, err := c.topoStore.Get(ctx, topoapi.ID(mastershipState.ConnectionID))
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +113,7 @@ func (c *Controller) Client(ctx context.Context, targetID topoapi.ID) (TargetCli
 		targetID: targetID,
 		conn:     conn,
 		deviceID: p4rtServerInfo.DeviceID,
-		role:     controllerInfo.Role.Name,
+		role:     env.GetServiceName(),
 		electionID: &p4api.Uint128{
 			Low:  mastershipState.Term,
 			High: 0,
@@ -144,6 +153,11 @@ func (c *Controller) start() error {
 		return err
 	}
 	// Starts mastership controller
+
+	err = c.startServiceController(topoStore)
+	if err != nil {
+		return err
+	}
 	err = c.startMastershipController(topoStore, conns)
 	if err != nil {
 		return err
@@ -175,4 +189,9 @@ func (c *Controller) startTargetController(topo topo.Store, conns southbound.Con
 func (c *Controller) startMastershipController(topo topo.Store, conns southbound.ConnManager) error {
 	mastershipController := mastership.NewController(topo, conns)
 	return mastershipController.Start()
+}
+
+func (c *Controller) startServiceController(topo topo.Store) error {
+	serviceController := service.NewController(topo)
+	return serviceController.Start()
 }
