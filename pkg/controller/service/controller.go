@@ -143,7 +143,7 @@ func (r *Reconciler) Reconcile(id controller.ID) (controller.Result, error) {
 			log.Errorf("Failed reconciling service entity for target", "Target ID", targetID, "error", err)
 			return controller.Result{}, err
 		}
-		return r.deleteServiceEntity(ctx, targetID)
+		return controller.Result{}, nil
 	}
 
 	if ok, err := r.createServiceEntity(ctx, targetID); err != nil {
